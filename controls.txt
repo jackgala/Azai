@@ -1,0 +1,19 @@
+•	Controller Mark 5:
+•	; = dash
+•	wasd = character movement
+•		specifically in 3D space only(wd = shift right plane, sd = shift left plane)
+•		For 2D
+•		a + ; = dash back¬¬¬¬¬¬¬
+•		d + ; = dash forward
+•		s keeps the player still/slows them down, s + ; = dodge of either right or left strike while stationary	
+•	ijkl = slashes
+•		j = right slash
+•		l = left slash
+•		i = stab
+•		k = down slash
+•	shift + ijkl = stance positioning
+•		shift + j = right stance
+•		shift + l = left stance
+•		shift + i = up stance
+•		shift + k = centered stance
+•	forward attack stun regular, standing attack and forward attack kill off both players but doging while standing still beats forward attack, (up attack from that position has fewer frames for counter punch). Opening to opening. 
