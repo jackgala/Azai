@@ -1,0 +1,2 @@
+# Azai
+Its a game
