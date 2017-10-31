@@ -6,10 +6,14 @@ public class PlayerController : MonoBehaviour {
 
 	Animator anim;
 	private bool slashRight; //used to flag animation bool for SlashRight
+	private bool isMovingR; //used to flag animation bool for moving right.
+	private bool isMovingL;
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();
 		slashRight = false; //init.
+		isMovingR = false;
+		isMovingL = false;
 	}
 	
 	// Update is called once per frame
@@ -32,11 +36,27 @@ public class PlayerController : MonoBehaviour {
 			slashRight = false;
 			SetAnims ("SlashRight", slashRight); 
 		}
-		if (Input.GetAxis ("Horizontal") != 0)
-			anim.SetBool ("isMoving", true);
-		else if (Input.GetAxis ("Horizontal") == 0){
-			anim.SetBool ("isMoving", false);
+
+		if (Input.GetKey(KeyCode.D)) {
+			isMovingR = true;
+			SetAnims ("isMovingRight", isMovingR);
+			transform.Translate (1 * Time.deltaTime * 20f,0,0);
+//			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
 		}
+		if (Input.GetKeyUp (KeyCode.D)) {
+			isMovingR = false;
+			SetAnims ("isMovingRight", isMovingR);
+		}
+		if (Input.GetKey(KeyCode.A)){
+			isMovingL = true;
+			SetAnims ("isMovingLeft", isMovingL);
+			transform.Translate (-1*  Time.deltaTime * 20f,0,0);
+		}
+		if (Input.GetKeyUp (KeyCode.A)) {
+			isMovingL = false;
+			SetAnims ("isMovingLeft", isMovingL);
+		}
+
 	}
 
 	public void SetStanceState(string state){
@@ -46,13 +66,13 @@ public class PlayerController : MonoBehaviour {
 		anim.SetBool (state, true);
 	}
 
-	void SetAnims(string animation, bool boolean)
+	void SetAnims(string paramName, bool boolean)
 	{
 		if (boolean) {
-			anim.SetBool (animation, boolean);
-			boolean = false; //fail-safe, in the event boolean value is not reset by getKeyUp (usually occurs when key is released mid-frame).
+			anim.SetBool (paramName, boolean);
+		//	boolean = false; //fail-safe, in the event boolean value is not reset by getKeyUp (usually occurs when key is released mid-frame).
 		} else {
-			anim.SetBool (animation, boolean);
+			anim.SetBool (paramName, boolean);
 
 		}
 	}
