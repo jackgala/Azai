@@ -24,11 +24,16 @@ public class PlayerController : MonoBehaviour {
 
 	void FixedUpdate() 
 	{
-		if (Input.GetKeyDown(KeyCode.J)) //sets appropriate booleans and animations while the key is pressed (returns true the first frame key is pressed DOWN).
-		{
+		if (Input.GetKey(KeyCode.J)) { //sets appropriate booleans and animations while the key is pressed (returns true the first frame key is pressed DOWN).
 //			Debug.Log ("J was pressed!");	//DEBUGGING.
 			slashRight = true;
 			SetAnims ("SlashRight", slashRight); 
+		}
+		else if(slashRight)// says that when the key is not down, but slashRight is still true, the key has been released.
+						  // Hopes to elliminate bug when GetKeyUp does not detect. 
+		{
+			slashRight = false;
+			SetAnims ("SlashRight", slashRight);
 		}
 		if (Input.GetKeyUp(KeyCode.J)) //sets appropriate booleans and animations once key is released (returns true the first frame key is NOT pressed down).
 		{
@@ -37,20 +42,31 @@ public class PlayerController : MonoBehaviour {
 			SetAnims ("SlashRight", slashRight); 
 		}
 
-		if (Input.GetKey(KeyCode.D)) {
+		if (Input.GetKey (KeyCode.D) && !isMovingL) {
 			isMovingR = true;
 			SetAnims ("isMovingRight", isMovingR);
-			transform.Translate (1 * Time.deltaTime * 20f,0,0);
+			transform.Translate (Time.deltaTime * 20f, 0, 0);
 //			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
+		} 
+		else if(isMovingR)
+		{
+			isMovingR = false;
+			SetAnims ("isMovingRight", isMovingR);
 		}
 		if (Input.GetKeyUp (KeyCode.D)) {
 			isMovingR = false;
 			SetAnims ("isMovingRight", isMovingR);
 		}
-		if (Input.GetKey(KeyCode.A)){
+
+		if (Input.GetKey (KeyCode.A) && !isMovingR) {
 			isMovingL = true;
 			SetAnims ("isMovingLeft", isMovingL);
-			transform.Translate (-1*  Time.deltaTime * 20f,0,0);
+			transform.Translate (Time.deltaTime * -20f, 0, 0);
+		} 
+		else if (isMovingL)
+		{
+			isMovingL = false;
+			SetAnims ("isMovingLeft", isMovingL);
 		}
 		if (Input.GetKeyUp (KeyCode.A)) {
 			isMovingL = false;
@@ -60,9 +76,10 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	public void SetStanceState(string state){
+		anim.SetBool ("StanceUp", false);
 		anim.SetBool ("StanceLeft", false);
 		anim.SetBool ("StanceRight", false);
-		anim.SetBool ("StanceUp", false);
+		anim.SetBool ("StanceCenter", false);
 		anim.SetBool (state, true);
 	}
 
