@@ -29,9 +29,8 @@ public class PlayerController : MonoBehaviour {
 			slashRight = true;
 			SetAnims ("SlashRight", slashRight); 
 		}
-		else if(slashRight)// says that when the key is not down, but slashRight is still true, the key has been released.
-						  // Hopes to elliminate bug when GetKeyUp does not detect. 
-		{
+		else if(slashRight)// says that when the key is not down, but slashRight is still true, the key has been released.	
+		{		 		   // Hopes to elliminate bug when GetKeyUp does not detect. 
 			slashRight = false;
 			SetAnims ("SlashRight", slashRight);
 		}
@@ -44,14 +43,21 @@ public class PlayerController : MonoBehaviour {
 
 		if (Input.GetKey (KeyCode.D) && !isMovingL) {
 			isMovingR = true;
-			SetAnims ("isMovingRight", isMovingR);
-			transform.Translate (Time.deltaTime * 20f, 0, 0);
+			if (Input.GetKey (KeyCode.Semicolon)) {
+				SetAnims ("isDashing", true); //placeholder bool for isDashing, to be changed as discussed.
+			} else {
+				SetAnims ("isMovingRight", isMovingR);
+			}
+			transform.Translate (Time.deltaTime * 20f, 0, 0); //NOTE: We might wanna update this so that while the player is dashing, they gain a brief 'burst' of speed (i.e allow the player to briefly move slightly faster than normally)
 //			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
 		} 
 		else if(isMovingR)
 		{
 			isMovingR = false;
 			SetAnims ("isMovingRight", isMovingR);
+		}
+		if (Input.GetKeyUp (KeyCode.Semicolon)) { //when the player is no longer dashing, it will stop the animation.
+			SetAnims ("isDashing", false);
 		}
 		if (Input.GetKeyUp (KeyCode.D)) {
 			isMovingR = false;
@@ -60,8 +66,12 @@ public class PlayerController : MonoBehaviour {
 
 		if (Input.GetKey (KeyCode.A) && !isMovingR) {
 			isMovingL = true;
-			SetAnims ("isMovingLeft", isMovingL);
-			transform.Translate (Time.deltaTime * -20f, 0, 0);
+			if (Input.GetKey (KeyCode.Semicolon)) {
+				SetAnims ("isDashing", true); //placeholder bool for isDashing, to be changed as discussed.
+			} else {
+				SetAnims ("isMovingLeft", isMovingL);
+			}
+			transform.Translate (Time.deltaTime * -20f, 0, 0); //NOTE: See line 51's comment.
 		} 
 		else if (isMovingL)
 		{
