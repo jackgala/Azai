@@ -4,10 +4,16 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
 
+	public float dashCoolDown = 1f;
+	public float speed = 20f;
+
 	Animator anim;
 	private bool slashRight; //used to flag animation bool for SlashRight
 	private bool isMovingR; //used to flag animation bool for moving right.
 	private bool isMovingL;
+	private bool isDashing;
+
+	private float timer;
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();
@@ -40,15 +46,26 @@ public class PlayerController : MonoBehaviour {
 			slashRight = false;
 			SetAnims ("SlashRight", slashRight); 
 		}
-
 		if (Input.GetKey (KeyCode.D) && !isMovingL) {
 			isMovingR = true;
-			if (Input.GetKey (KeyCode.Semicolon)) {
+			if (Input.GetKey (KeyCode.Semicolon) && !isDashing) {
+				isDashing = true;
 				SetAnims ("isDashing", true); //placeholder bool for isDashing, to be changed as discussed.
-			} else {
+			} else if (isDashing) {
+				timer += Time.deltaTime;
+
+				if(timer <= 0.1f)
+					transform.Translate (Time.deltaTime * speed*5f, 0, 0);
+				
+				if (timer >= dashCoolDown) {
+					isDashing = false;
+					timer = 0;
+				}
+			}
+			else {
 				SetAnims ("isMovingRight", isMovingR);
 			}
-			transform.Translate (Time.deltaTime * 20f, 0, 0); //NOTE: We might wanna update this so that while the player is dashing, they gain a brief 'burst' of speed (i.e allow the player to briefly move slightly faster than normally)
+			transform.Translate (Time.deltaTime * speed, 0, 0); //NOTE: We might wanna update this so that while the player is dashing, they gain a brief 'burst' of speed (i.e allow the player to briefly move slightly faster than normally)
 //			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
 		} 
 		else if(isMovingR)
@@ -66,13 +83,26 @@ public class PlayerController : MonoBehaviour {
 
 		if (Input.GetKey (KeyCode.A) && !isMovingR) {
 			isMovingL = true;
-			if (Input.GetKey (KeyCode.Semicolon)) {
+			if (Input.GetKey (KeyCode.Semicolon) && !isDashing) {
+				isDashing = true;
 				SetAnims ("isDashing", true); //placeholder bool for isDashing, to be changed as discussed.
-			} else {
+			} else if (isDashing) {
+				timer += Time.deltaTime;
+
+				if (timer <= 0.1f)
+					transform.Translate (Time.deltaTime * speed * -5f, 0, 0);
+
+				if (timer >= dashCoolDown) {
+					isDashing = false;
+					timer = 0;
+				}
+			}
+			else {
 				SetAnims ("isMovingLeft", isMovingL);
 			}
-			transform.Translate (Time.deltaTime * -20f, 0, 0); //NOTE: See line 51's comment.
-		} 
+			transform.Translate (Time.deltaTime * (-speed), 0, 0); //NOTE: We might wanna update this so that while the player is dashing, they gain a brief 'burst' of speed (i.e allow the player to briefly move slightly faster than normally)
+			//			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
+		}
 		else if (isMovingL)
 		{
 			isMovingL = false;
