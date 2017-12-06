@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour {
 
 	public float dashCoolDown = 1f;
+	private float dashingduration;
 	public float speed = 20f;
 
 	Animator anim;
@@ -16,6 +17,7 @@ public class PlayerController : MonoBehaviour {
 	private float timer;
 	// Use this for initialization
 	void Start () {
+		dashingduration = 0.1f;
 		anim = GetComponent<Animator> ();
 		slashRight = false; //init.
 		isMovingR = false;
@@ -25,12 +27,11 @@ public class PlayerController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 
-			
 	}
 
 	void FixedUpdate() 
 	{
-		if (Input.GetKey(KeyCode.J)) { //sets appropriate booleans and animations while the key is pressed (returns true the first frame key is pressed DOWN).
+		if (Input.GetKey(KeyCode.L)) { //sets appropriate booleans and animations while the key is pressed (returns true the first frame key is pressed DOWN).
 //			Debug.Log ("J was pressed!");	//DEBUGGING.
 			slashRight = true;
 			SetAnims ("SlashRight", slashRight); 
@@ -40,31 +41,44 @@ public class PlayerController : MonoBehaviour {
 			slashRight = false;
 			SetAnims ("SlashRight", slashRight);
 		}
-		if (Input.GetKeyUp(KeyCode.J)) //sets appropriate booleans and animations once key is released (returns true the first frame key is NOT pressed down).
+		if (Input.GetKeyUp(KeyCode.L)) //sets appropriate booleans and animations once key is released (returns true the first frame key is NOT pressed down).
 		{
 //			Debug.Log ("J was released!");	//DEBUGGING.
 			slashRight = false;
 			SetAnims ("SlashRight", slashRight); 
 		}
+
+		// Moving forward
 		if (Input.GetKey (KeyCode.D) && !isMovingL) {
 			isMovingR = true;
+
+			if (slashRight == true) {
+				isMovingR = false;
+				return;
+			}
+
+
+			// dashing
 			if (Input.GetKey (KeyCode.Semicolon) && !isDashing) {
 				isDashing = true;
 				SetAnims ("isDashing", true); //placeholder bool for isDashing, to be changed as discussed.
 			} else if (isDashing) {
 				timer += Time.deltaTime;
 
-				if(timer <= 0.1f)
-					transform.Translate (Time.deltaTime * speed*5f, 0, 0);
-				
-				if (timer >= dashCoolDown) {
+				if (timer <= dashingduration) //while within the threshold, animation will run.
+				{
+					transform.Translate (Time.deltaTime * speed * 5f, 0, 0);
+					SetAnims ("isDashing", false);
+				}
+				if (timer >= dashCoolDown)
+				{
 					isDashing = false;
 					timer = 0;
 				}
 			}
-			else {
-				SetAnims ("isMovingRight", isMovingR);
-			}
+			//end dashing
+
+			SetAnims ("isMovingRight", isMovingR);
 			transform.Translate (Time.deltaTime * speed, 0, 0); //NOTE: We might wanna update this so that while the player is dashing, they gain a brief 'burst' of speed (i.e allow the player to briefly move slightly faster than normally)
 //			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
 		} 
@@ -73,33 +87,40 @@ public class PlayerController : MonoBehaviour {
 			isMovingR = false;
 			SetAnims ("isMovingRight", isMovingR);
 		}
-		if (Input.GetKeyUp (KeyCode.Semicolon)) { //when the player is no longer dashing, it will stop the animation.
-			SetAnims ("isDashing", false);
-		}
+		// end moving forward
 		if (Input.GetKeyUp (KeyCode.D)) {
 			isMovingR = false;
 			SetAnims ("isMovingRight", isMovingR);
 		}
 
-		if (Input.GetKey (KeyCode.A) && !isMovingR) {
+		// Moving backward
+		if (Input.GetKey (KeyCode.A) && !isMovingR) 
+		{
 			isMovingL = true;
+
+			// dashing
 			if (Input.GetKey (KeyCode.Semicolon) && !isDashing) {
 				isDashing = true;
-				SetAnims ("isDashing", true); //placeholder bool for isDashing, to be changed as discussed.
-			} else if (isDashing) {
+				SetAnims ("isDashing", isDashing);
+			} 
+			else if (isDashing) 
+			{	//while dashing animation is running, increment cooldown.
 				timer += Time.deltaTime;
 
-				if (timer <= 0.1f)
+				if (timer <= dashingduration) 
+				{
 					transform.Translate (Time.deltaTime * speed * -5f, 0, 0);
-
-				if (timer >= dashCoolDown) {
+					SetAnims ("isDashing", false);
+				}
+				if (timer >= dashCoolDown)
+				{
 					isDashing = false;
 					timer = 0;
 				}
 			}
-			else {
-				SetAnims ("isMovingLeft", isMovingL);
-			}
+			// end dashing
+
+			SetAnims ("isMovingLeft", isMovingL);
 			transform.Translate (Time.deltaTime * (-speed), 0, 0); //NOTE: We might wanna update this so that while the player is dashing, they gain a brief 'burst' of speed (i.e allow the player to briefly move slightly faster than normally)
 			//			Debug.Log ("isMoving is: "+isMoving); //DEBUGGING.
 		}
@@ -108,9 +129,13 @@ public class PlayerController : MonoBehaviour {
 			isMovingL = false;
 			SetAnims ("isMovingLeft", isMovingL);
 		}
+		// end moving backward
 		if (Input.GetKeyUp (KeyCode.A)) {
 			isMovingL = false;
 			SetAnims ("isMovingLeft", isMovingL);
+		}
+		if (Input.GetKeyUp (KeyCode.Semicolon)) { //when the player is no longer dashing, it will stop the animation.
+			SetAnims ("isDashing", false);
 		}
 
 	}
