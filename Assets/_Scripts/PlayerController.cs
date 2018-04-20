@@ -4,16 +4,34 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
 
+	//Tow hashtables based off of stace sprit(Player.getSprite()) for moving and attacking
 	public float dashCooldown;
 	private float dashLength;
 	public float speed = 20f;
 	public Sprite[] runningForwardSheet;
+	public Sprite[] runningForwardRightStance;
+	public Sprite[] runningForwardUpStance;
+	public Sprite[] runningBackwardRightStance;
+	public Sprite[] runningBackwardUpStance;
 	public Sprite[] runningBackwardSheet;
 	public Sprite[] idle;
+	public Sprite[] attackF;
+	public Sprite[] stances;
+	public Sprite[][] runningAll = new Sprite[3][4]();
+	for(int x=0; x<4; x++){
+		runningAll[0][x] = runningForwardSheet;
+	}
+	for(int x=0; x<4; x++){
+		runningAll[1][x] = runningRightStance;
+	}
+	for(int x=0; x<4; x++){
+		runningAll[2][x] = runningUpStance;
+	}
 	public int direction;
 	private int running = 0;
 	private int attack = 0;
 	private int idleC = 0;
+	private int stance = 1;
 	private SpriteRenderer spriteR;
 
 
@@ -37,6 +55,18 @@ public class PlayerController : MonoBehaviour {
 	void Update () {
 		if (Input.GetKey(KeyCode.Semicolon)) {
 			isDashing = true;
+		}
+		if (Input.GetKey(KeyCode.K)) {
+			stance = 0;
+		}
+		if (Input.GetKey(KeyCode.L)) {
+			stance = 1;
+		}
+		if (Input.GetKey(KeyCode.J)) {
+			stance = 2;
+		}
+		if (Input.GetKey(KeyCode.I)) {
+			stance = 3;
 		}
 		if (Input.GetKey (KeyCode.D)) {
 			isMoving = true;
@@ -82,16 +112,28 @@ public class PlayerController : MonoBehaviour {
 		}
 		if (direction == 1 && counter % 5 == 0) {
 			//runningForwardSheet [counter];
-			spriteR.sprite = runningForwardSheet [counter/5];
+			if (stance == 3) {
+				spriteR.sprite = runningAll [1] [counter / 5];
+			} else {
+				spriteR.sprite = runningAll[stance] [counter/5];
+			}
+
 		} else if (direction == -1&& counter % 5 == 0) {
 			//	runningBackwardSheet [counter];
-			spriteR.sprite = runningBackwardSheet [counter/5];
+			if (stance == 3) {
+				spriteR.sprite = runningAll [1] [counter / 5];
+			} else {
+				spriteR.sprite = runningAll[stance] [counter/5];
+			}
 		}
 		running++;
 
 	}
 	void Attack(int counter){
 		//if(attack bool triggered by typing in J)
+	}
+	void StanceM(int counter){
+		spriteR.sprite = stances [stance];
 	}
 	void Idle(int counter){
 		if (counter >= 36) {
