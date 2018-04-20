@@ -7,7 +7,15 @@ public class PlayerController : MonoBehaviour {
 	public float dashCooldown;
 	private float dashLength;
 	public float speed = 20f;
+	public Sprite[] runningForwardSheet;
+	public Sprite[] runningBackwardSheet;
+	public Sprite[] idle;
 	public int direction;
+	private int running = 0;
+	private int attack = 0;
+	private int idleC = 0;
+	private SpriteRenderer spriteR;
+
 
 	Animator anim;
 
@@ -17,13 +25,15 @@ public class PlayerController : MonoBehaviour {
 	private float timer;
 	// Use this for initialization
 	void Start () {
-		dashLength = 0.1f;
-		dashCooldown = .2f;
+		dashLength = 0.05f;
+		dashCooldown = .6f;
 		anim = GetComponent<Animator> ();
 		isMoving = false;
+		spriteR = gameObject.GetComponent<SpriteRenderer>();
 	}
 	
 	// Update is called once per frame
+	//spriteRenderer
 	void Update () {
 		if (Input.GetKey(KeyCode.Semicolon)) {
 			isDashing = true;
@@ -43,30 +53,56 @@ public class PlayerController : MonoBehaviour {
 	//runs at a fixed rate.
 	void FixedUpdate()
 	{
-		if (isMoving) 
-		{
-			if (isDashing) 
-			{
+		if (isMoving) {
+			if (isDashing) {
 				timer += Time.deltaTime;
 
 				if (timer <= dashLength) { 	//while within the threshold, animation will run.
 					transform.Translate (direction * Time.deltaTime * speed * 5f, 0, 0);
 				} 
-				if (timer >= dashLength + dashCooldown)
-				{
+				if (timer >= dashLength + dashCooldown) {
 					isDashing = false;
 					timer = 0;
 				}
-			} 
-			else 
-			{
+			} else {
+				Running (running);
 				transform.Translate (direction * Time.deltaTime * speed, 0, 0);
+				//SetAnims ("isMovingRight", true);
 			}
+		} else {
+			//SetAnims ("isMovingRight", false);
+			Idle(idleC);
 		}
 	}
 
 
+	void Running(int counter){
+		if (counter == 15) {
+			running = 0;
+		}
+		if (direction == 1 && counter % 5 == 0) {
+			//runningForwardSheet [counter];
+			spriteR.sprite = runningForwardSheet [counter/5];
+		} else if (direction == -1&& counter % 5 == 0) {
+			//	runningBackwardSheet [counter];
+			spriteR.sprite = runningBackwardSheet [counter/5];
+		}
+		running++;
 
+	}
+	void Attack(int counter){
+		//if(attack bool triggered by typing in J)
+	}
+	void Idle(int counter){
+		if (counter >= 36) {
+			idleC = 0;
+		}
+		if (counter % 9 == 0) {
+			//runningForwardSheet [counter];
+			spriteR.sprite = idle [counter / 9];
+		} 
+		idleC++;
+	}
 	void SetAnims(string paramName, bool boolean)
 	{
 		if (boolean) {
@@ -76,5 +112,6 @@ public class PlayerController : MonoBehaviour {
 			anim.SetBool (paramName, boolean);
 
 		}
+
 	}
 }
