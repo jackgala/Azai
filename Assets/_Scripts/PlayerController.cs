@@ -3,6 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/* 
+Sketch of the multi-level array:
+
+level 1: Direction
+level 2: Stance
+level 3: Move State
+level 4: Sprites
+
+We can use Enums for Direction, Stance, and Move State
+
+Need to add a Facing layer later
+*/
+
 public class PlayerController : MonoBehaviour {
 
     //Implement values into 
@@ -21,7 +34,7 @@ public class PlayerController : MonoBehaviour {
 	public Sprite[] attackF;
 	public Sprite[] stances;
 	public int direction;
-	private int running = 0;
+	private float running = 0;
 	private int attack = 0;
 	private int idleC = 0;
 	private int stance = 0;
@@ -33,15 +46,23 @@ public class PlayerController : MonoBehaviour {
         public Sprite image;
     }
     public NamedImage[] pictures;
-    private Hashtable[] runHash = new Hashtable[4];
-    int loadingStance = 0;
+    private Sprite[,,,] runHash = new Sprite[2, 4, 2, 3];
+    private int loadingStance = 0;
+	private enum Direction {Forward, Backward};
+	private enum Stance {High, Low, Left, Right};
+	private enum State {Idle, Run /* attack */};
     private void loadHash()
     {
-      
+		/*
+		Fill in Forwrd Dir, Back Dir,
+				High stance, Right Stance, Left Stance
+				Run
+		 */
+		/*
         for (int x = 0; x < 6; x++)
         {
             loadingStance += x;
-            runHash[0].Add(pictures[loadingStance].name, pictures[loadingStance].image);
+            runHash[] = pictures[loadingStance].image;
         }
         for (int x = 0; x < 6; x++)
         {
@@ -52,13 +73,16 @@ public class PlayerController : MonoBehaviour {
         {
             loadingStance += x;
             runHash[2].Add(pictures[loadingStance].name, pictures[loadingStance].image);
-        }
+        }*/
 
-        foreach (string key in runHash[0].Keys) {
-            if (runHash[0].ContainsKey(key)) {
-                print("It has shit");
-            }
-        }
+		for (int x = 0; x < 18; x++)
+		{
+			int dir = (x%6)/3;
+			int stance = x/6;
+			int frame = x%3;
+			
+			runHash[dir, stance, 1, frame] = pictures[x].image;
+		}
 
     }
     Animator anim;
@@ -83,23 +107,23 @@ public class PlayerController : MonoBehaviour {
 			isDashing = true;
 		}
 		if (Input.GetKey(KeyCode.J)) {
-			stance = 0;
+			stance = Stance.Left.GetHashCode();
 		}
 		if (Input.GetKey(KeyCode.K)) {
-			stance = 1;
+			stance = Stance.Low.GetHashCode();
 		}
 		if (Input.GetKey(KeyCode.I)) {
-			stance = 2;
+			stance = Stance.High.GetHashCode();
 		}
 		if (Input.GetKey(KeyCode.L)) {
-			stance = 3;
+			stance = Stance.Right.GetHashCode();
 		}
 		if (Input.GetKey (KeyCode.D)) {
 			isMoving = true;
-			direction = 1;
+			direction = Direction.Forward.GetHashCode();
 		} else if (Input.GetKey (KeyCode.A)) {
 			isMoving = true;
-			direction = -1;
+			direction = Direction.Backward.GetHashCode();
 		}  
 		else {
 			isMoving = false;
@@ -121,7 +145,7 @@ public class PlayerController : MonoBehaviour {
 					timer = 0;
 				}
 			} else {
-				Running (running);
+				Running ();
 				transform.Translate (direction * Time.deltaTime * speed, 0, 0);
 				SetAnims ("isMovingRight", true);
 			}
@@ -132,20 +156,21 @@ public class PlayerController : MonoBehaviour {
 	}
 
 
-	void Running(int counter){
-		if (counter == 15) {
+	void Running(){
+		if (running == 3) {
 			running = 0;
 		}
-		if (direction == 1 && counter % 5 == 0) {
-            spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
+		spriteR.sprite = runHash[direction, stance, 1, (int)(running)];
+		// if (direction == 1 && running % 5 == 0) {
+        //     spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
 
-		} else if (direction == -1&& counter % 5 == 0) {
-			//	runningBackwardSheet [counter];
-			if (stance == 3) {
-				spriteR.sprite = runningBackwardRightStance [counter / 5];
-			}
-		}
-		running++;
+		// } else if (direction == -1&& running % 5 == 0) {
+		// 	//	runningBackwardSheet [counter];
+		// 	if (stance == 3) {
+		// 		spriteR.sprite = runningBackwardRightStance [running / 5];
+		// 	}
+		// }
+		running += Time.deltaTime;
 
 	}
 	void Attack(int counter){
