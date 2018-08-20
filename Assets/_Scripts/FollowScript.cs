@@ -5,6 +5,7 @@ using UnityEngine;
 public class FollowScript : MonoBehaviour {
 
 	public Transform target;
+	public float followSpeed = 5.0f;
 
 	private Vector3 offset;
 
@@ -17,6 +18,6 @@ public class FollowScript : MonoBehaviour {
 	void Update () {
 
 		Vector3 dest = target.position + offset;
-		transform.position = Vector3.Lerp(transform.position, target.position, 5.0f * Time.deltaTime);
+		transform.position = Vector3.Lerp(transform.position, dest, followSpeed * Time.deltaTime);
 	}
 }
