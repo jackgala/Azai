@@ -31,9 +31,14 @@ public class PlayerController : MonoBehaviour {
     {
         public string name;
         public Sprite image;
+
+        public NamedImage(String n, Sprite i) {
+            name = n;
+            image = i;
+        }
     }
     public NamedImage[] pictures;
-    private Hashtable[] runHash = new Hashtable[4];
+    private NamedImage[][] runArray = new NamedImage[4][];
     int loadingStance = 0;
     private void loadHash()
     {
@@ -41,24 +46,19 @@ public class PlayerController : MonoBehaviour {
         for (int x = 0; x < 6; x++)
         {
             loadingStance += x;
-            runHash[0].Add(pictures[loadingStance].name, pictures[loadingStance].image);
+            runArray[0][x] = new NamedImage(pictures[loadingStance].name, pictures[loadingStance].image);
         }
         for (int x = 0; x < 6; x++)
         {
             loadingStance += x;
-            runHash[1].Add(pictures[loadingStance].name, pictures[loadingStance].image);
+            runArray[1][x] = new NamedImage(pictures[loadingStance].name, pictures[loadingStance].image);
         }
         for (int x = 0; x < 6; x++)
         {
             loadingStance += x;
-            runHash[2].Add(pictures[loadingStance].name, pictures[loadingStance].image);
+            runArray[2][x] = new NamedImage(pictures[loadingStance].name, pictures[loadingStance].image);
         }
 
-        foreach (string key in runHash[0].Keys) {
-            if (runHash[0].ContainsKey(key)) {
-                print("It has shit");
-            }
-        }
 
     }
     Animator anim;
@@ -137,12 +137,19 @@ public class PlayerController : MonoBehaviour {
 			running = 0;
 		}
 		if (direction == 1 && counter % 5 == 0) {
-            spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
+            if (counter == 15) {
+                counter = 0;
+            }
+            spriteR.sprite = (Sprite)runArray[stance][counter/5].image.;
 
 		} else if (direction == -1&& counter % 5 == 0) {
 			//	runningBackwardSheet [counter];
 			if (stance == 3) {
-				spriteR.sprite = runningBackwardRightStance [counter / 5];
+                if (counter == 31)
+                {
+                    counter = 1;
+                }
+                spriteR.sprite = (Sprite)runningBackwardRightStance [(counter / 5) + 3];
 			}
 		}
 		running++;
