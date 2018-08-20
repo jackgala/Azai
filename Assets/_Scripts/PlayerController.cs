@@ -48,7 +48,7 @@ public class PlayerController : MonoBehaviour {
     public NamedImage[] pictures;
     private Sprite[,,,] runHash = new Sprite[2, 4, 2, 3];
 	private enum Direction {Forward, Backward};
-	private enum Stance {High, Low, Left, Right};
+	private enum Stance {Left, High, Right, Low};
     private void loadHash()
     {
 		/*
