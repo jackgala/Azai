@@ -24,18 +24,18 @@ public class PlayerController : MonoBehaviour {
     public float dashCooldown;
 	private float dashLength;
 	public float speed = 20f;
-	public Sprite[] runningForwardSheet;
-	public Sprite[] runningForwardRightStance;
-	public Sprite[] runningForwardUpStance;
-	public Sprite[] runningBackwardRightStance;
-	public Sprite[] runningBackwardUpStance;
-	public Sprite[] runningBackwardSheet;
+	// public Sprite[] runningForwardSheet;
+	// public Sprite[] runningForwardRightStance;
+	// public Sprite[] runningForwardUpStance;
+	// public Sprite[] runningBackwardRightStance;
+	// public Sprite[] runningBackwardUpStance;
+	// public Sprite[] runningBackwardSheet;
 	public Sprite[] idle;
-	public Sprite[] attackF;
+	//public Sprite[] attackF;
 	public Sprite[] stances;
 	public int direction;
-	private float running = 0;
-	private int attack = 0;
+	private int running = 0;
+	//private int attack = 0;
 	private int idleC = 0;
 	private int stance = 0;
 	private SpriteRenderer spriteR;
@@ -47,10 +47,8 @@ public class PlayerController : MonoBehaviour {
     }
     public NamedImage[] pictures;
     private Sprite[,,,] runHash = new Sprite[2, 4, 2, 3];
-    private int loadingStance = 0;
 	private enum Direction {Forward, Backward};
 	private enum Stance {High, Low, Left, Right};
-	private enum State {Idle, Run /* attack */};
     private void loadHash()
     {
 		/*
@@ -98,6 +96,7 @@ public class PlayerController : MonoBehaviour {
 		anim = GetComponent<Animator> ();
 		isMoving = false;
 		spriteR = gameObject.GetComponent<SpriteRenderer>();
+		loadHash();
 	}
 	
 	// Update is called once per frame
@@ -138,29 +137,33 @@ public class PlayerController : MonoBehaviour {
 				timer += Time.deltaTime;
 
 				if (timer <= dashLength) { 	//while within the threshold, animation will run.
-					transform.Translate (direction * Time.deltaTime * speed * 5f, 0, 0);
-				} 
+					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed * 5f, 0, 0);
+				} else {
+					Running ();
+					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
+					//SetAnims ("isMovingRight", true);
+				}
 				if (timer >= dashLength + dashCooldown) {
 					isDashing = false;
 					timer = 0;
 				}
 			} else {
 				Running ();
-				transform.Translate (direction * Time.deltaTime * speed, 0, 0);
-				SetAnims ("isMovingRight", true);
+				transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
+				//SetAnims ("isMovingRight", true);
 			}
 		} else {
-			SetAnims ("isMovingRight", false);
-			Idle(idleC);
+			//SetAnims ("isMovingRight", false);
+			Idle();
 		}
 	}
 
 
 	void Running(){
-		if (running == 3) {
+		if (running == 15) {
 			running = 0;
 		}
-		spriteR.sprite = runHash[direction, stance, 1, (int)(running)];
+		spriteR.sprite = runHash[direction, stance, 1, running / 5];
 		// if (direction == 1 && running % 5 == 0) {
         //     spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
 
@@ -170,7 +173,7 @@ public class PlayerController : MonoBehaviour {
 		// 		spriteR.sprite = runningBackwardRightStance [running / 5];
 		// 	}
 		// }
-		running += Time.deltaTime;
+		running++;
 
 	}
 	void Attack(int counter){
@@ -179,13 +182,13 @@ public class PlayerController : MonoBehaviour {
 	void StanceM(int counter){
 		spriteR.sprite = stances [stance];
 	}
-	void Idle(int counter){
-		if (counter >= 36) {
+	void Idle(){
+		if (idleC >= 36) {
 			idleC = 0;
 		}
-		if (counter % 9 == 0) {
+		if (idleC % 9 == 0) {
 			//runningForwardSheet [counter];
-			//spriteR.sprite = idle [counter / 9];
+			spriteR.sprite = idle [idleC / 9];
 		} 
 		idleC++;
 	}
