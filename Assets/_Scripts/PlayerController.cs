@@ -21,8 +21,9 @@ public class PlayerController : MonoBehaviour {
     //Implement values into 
     //Set up number system with stance
     //run hash = 2D array for stances and running: [stance][type of running] 
-    public float dashCooldown;
-	private float dashLength;
+    public float dashCooldown = 0.6f;
+	public float dashCooldown2 = 0.3f;
+	public float dashLength = 0.05f;
 	public float speed = 20f;
 	// public Sprite[] runningForwardSheet;
 	// public Sprite[] runningForwardRightStance;
@@ -33,6 +34,7 @@ public class PlayerController : MonoBehaviour {
 	public Sprite[] idle;
 	//public Sprite[] attackF;
 	public Sprite[] stances;
+	public Sprite[] dashing;
 	public int direction;
 	private int running = 0;
 	//private int attack = 0;
@@ -46,7 +48,7 @@ public class PlayerController : MonoBehaviour {
         public Sprite image;
     }
     public NamedImage[] pictures;
-    private Sprite[,,,] runHash = new Sprite[2, 4, 2, 3];
+    private Sprite[,,,] runHash = new Sprite[2, 4, 3, 3];
 	private enum Direction {Forward, Backward};
 	private enum Stance {Left, High, Right, Low};
     private void loadHash()
@@ -82,6 +84,11 @@ public class PlayerController : MonoBehaviour {
 			runHash[dir, stance, 1, frame] = pictures[x].image;
 		}
 
+		for(int x = 0; x < 4; x++){
+			runHash[0, x, 2, 0] = dashing[0];
+			runHash[1, x, 2, 0] = dashing[1];
+		}
+
     }
     Animator anim;
 
@@ -91,8 +98,6 @@ public class PlayerController : MonoBehaviour {
 	private float timer;
     // Use this for initialization
     void Start () {
-		dashLength = 0.05f;
-		dashCooldown = .6f;
 		anim = GetComponent<Animator> ();
 		isMoving = false;
 		spriteR = gameObject.GetComponent<SpriteRenderer>();
@@ -137,11 +142,15 @@ public class PlayerController : MonoBehaviour {
 				timer += Time.deltaTime;
 
 				if (timer <= dashLength) { 	//while within the threshold, animation will run.
+					spriteR.sprite = runHash[direction, stance, 2, 0];
 					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed * 5f, 0, 0);
-				} else {
+				} else if (timer >= dashLength + dashCooldown2) {
 					Running ();
 					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
 					//SetAnims ("isMovingRight", true);
+				} else {
+					spriteR.sprite = runHash[direction, stance, 2, 0];
+					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
 				}
 				if (timer >= dashLength + dashCooldown) {
 					isDashing = false;
@@ -154,6 +163,10 @@ public class PlayerController : MonoBehaviour {
 			}
 		} else {
 			//SetAnims ("isMovingRight", false);
+			if(isDashing) {
+				isDashing = false;
+				timer = 0;
+			}
 			Idle();
 		}
 	}
