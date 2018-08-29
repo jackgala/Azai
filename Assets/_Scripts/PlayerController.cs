@@ -37,6 +37,8 @@ public class PlayerController : MonoBehaviour {
 	public Sprite[] stances;
 	public int direction;
 	private int running = 0;
+    public Collider2D hitbox;
+    public Collider2D attackbox;
 	//private int attack = 0;
 	private int idleC = 0;
 	private int attackC = 0;
