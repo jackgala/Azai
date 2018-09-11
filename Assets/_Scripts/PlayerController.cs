@@ -25,7 +25,9 @@ public class PlayerController : MonoBehaviour {
 	public float dashCooldown2 = 0.3f;
 	public float dashLength = 0.05f;
 	public float attackCooldown = 0.6f;
-	public float speed = 20f;
+	public float stanceSwitchDelay = 0.3f;
+	public float baseSpeed = 20f;
+	public float attackSpeedModifier = 0.85f;
 	// public Sprite[] runningForwardSheet;
 	// public Sprite[] runningForwardRightStance;
 	// public Sprite[] runningForwardUpStance;
@@ -34,7 +36,6 @@ public class PlayerController : MonoBehaviour {
 	// public Sprite[] runningBackwardSheet;
 	public Sprite[] idle;
 	//public Sprite[] attackF;
-	public Sprite[] stances;
 	public int direction;
 	private int running = 0;
     public Collider2D hitbox;
@@ -42,7 +43,9 @@ public class PlayerController : MonoBehaviour {
 	//private int attack = 0;
 	private int idleC = 0;
 	private int attackC = 0;
-	private int stance = 0;
+	public int stance = 0;
+	private float attackMoveSpeed;
+	private float speed;
 	private SpriteRenderer spriteR;
     [Serializable]
     public struct NamedImage
@@ -95,17 +98,22 @@ public class PlayerController : MonoBehaviour {
     }
     Animator anim;
 
-	private bool isMoving;
-	private bool isDashing;
-	private bool isAttacking;
+	public bool isMoving;
+	public bool isDashing;
+	public bool isAttacking;
+	private bool isSwitching;
+	private int tempStance;
 
 	private float dashtimer;
 	private float attacktimer;
+	private float stanceTimer;
     // Use this for initialization
     void Start () {
 		anim = GetComponent<Animator> ();
 		isMoving = false;
 		spriteR = gameObject.GetComponent<SpriteRenderer>();
+		speed = baseSpeed;
+		attackMoveSpeed = baseSpeed * attackSpeedModifier;
 		loadHash();
 	}
 	
@@ -115,20 +123,38 @@ public class PlayerController : MonoBehaviour {
 		if (Input.GetKey(KeyCode.Semicolon)) {
 			isDashing = true;
 		}
-		if (Input.GetKey (KeyCode.U)) {
-			isAttacking = true;
-		}
 		if (Input.GetKey(KeyCode.J)) {
-			stance = Stance.Left.GetHashCode();
+			if (!Input.GetKey(KeyCode.LeftShift)){
+				isAttacking = true;
+				speed = attackMoveSpeed;
+			}
+			if (stance != Stance.Left.GetHashCode()){
+				isSwitching = true;
+				tempStance = Stance.Left.GetHashCode();
+			}
 		}
 		// if (Input.GetKey(KeyCode.K)) {
 		// 	stance = Stance.Low.GetHashCode();
 		// }
 		if (Input.GetKey(KeyCode.I)) {
-			stance = Stance.High.GetHashCode();
+			if (!Input.GetKey(KeyCode.LeftShift)){
+				isAttacking = true;
+				speed = attackMoveSpeed;
+			}
+			if (stance != Stance.High.GetHashCode()){
+				isSwitching = true;
+				tempStance = Stance.High.GetHashCode();
+			}
 		}
 		if (Input.GetKey(KeyCode.L)) {
-			stance = Stance.Right.GetHashCode();
+			if (!Input.GetKey(KeyCode.LeftShift)){
+				isAttacking = true;
+				speed = attackMoveSpeed;
+			}
+			if (stance != Stance.Right.GetHashCode()){
+				isSwitching = true;
+				tempStance = Stance.Right.GetHashCode();
+			}
 		}
 		if (Input.GetKey (KeyCode.D)) {
 			isMoving = true;
@@ -146,22 +172,33 @@ public class PlayerController : MonoBehaviour {
 	//runs at a fixed rate.
 	void FixedUpdate()
 	{
-		if(attacktimer > 0) {
+		if (isSwitching) {
+			stanceTimer += Time.deltaTime;
+			if (stanceTimer >= stanceSwitchDelay) {
+				stanceTimer = 0;
+				isSwitching = false;
+			}
+		}
+		else if (stance != tempStance) {
+			stance = tempStance;
+		}
+		else if (attacktimer > 0) {
 			attacktimer += Time.deltaTime;
 			if (attacktimer >= attackCooldown) {
 				attacktimer = 0;
 			}
 		}
-		if (isAttacking && attacktimer == 0) {
+		else if (isAttacking && attacktimer == 0 && stance == tempStance) {
 			spriteR.sprite = runHash[direction, stance, Action.Attack.GetHashCode(), attackC/5];
 			attackC++;
 			if (attackC == 15) {
 				attackC = 0;
 				isAttacking = false;
 				attacktimer = 0.001f;
+				speed = baseSpeed;
 			}
 		}
-		else if (isMoving) {
+		if (isMoving) {
 			if (isDashing) {
 				dashtimer += Time.deltaTime;
 
@@ -202,7 +239,9 @@ public class PlayerController : MonoBehaviour {
 		if (running == 15) {
 			running = 0;
 		}
-		spriteR.sprite = runHash[direction, stance, Action.Run.GetHashCode(), running / 5];
+		if (!isAttacking) {
+			spriteR.sprite = runHash[direction, stance, Action.Run.GetHashCode(), running / 5];
+		}
 		// if (direction == 1 && running % 5 == 0) {
         //     spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
 
@@ -217,9 +256,6 @@ public class PlayerController : MonoBehaviour {
 	}
 	void Attack(int counter){
 		//if(attack bool triggered by typing in J)
-	}
-	void StanceM(int counter){
-		spriteR.sprite = stances [stance];
 	}
 	void Idle(){
 		if (idleC >= 36) {
