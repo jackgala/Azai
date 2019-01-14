@@ -48,10 +48,14 @@ public class AIController : MonoBehaviour {
 	public float noise;
 	public float refreshRate = 1f;
 
-	private int[,] stateSpace = new int[3,6];
 	private enum Distance {InRange, OutOfRange, Coward};
 	private enum Action {Attack, Idle, DashForward, DashBackward, RunForward, RunBackward};
 	private enum Direction {Backward, Forward};
+	private enum AnimState {Start, Playing, End}
+	private AnimState animState = AnimState.Start;
+	private Action state = Action.Idle;
+	private Action nextAction;
+	private Action[,] stateSpace = new Action[3,6];
 	public float dashCooldown = 0.6f;
 	public float dashCooldown2 = 0.3f;
 	public float dashLength = 0.05f;
@@ -117,25 +121,24 @@ public class AIController : MonoBehaviour {
 
 		for (int x = 0; x < 3; x++)
 		{
-			for(int y = 0; y < 6; y++) {
-				runHash[x, Action.RunForward.GetHashCode(), y%3] = pictures[x*11+y].image;
-			}
 			for(int y = 0; y < 3; y++) {
-				runHash[x, Action.Attack.GetHashCode(), y] = pictures[x*11+y+6].image;
-				runHash[x, Action.Attack.GetHashCode(), y] = pictures[x*11+y+6].image;
+				runHash[x, Action.Attack.GetHashCode(), y] = pictures[x*11+y].image;
+				runHash[x, Action.Idle.GetHashCode(), y] = pictures[x*11+y+3].image;
+				runHash[x, Action.RunForward.GetHashCode(), y%3] = pictures[x*11+y+8].image;
+				runHash[x, Action.RunBackward.GetHashCode(), y%3] = pictures[x*11+y+11].image;
 			}
-			runHash[x, Action.DashForward.GetHashCode(), 0] = pictures[x*11+9].image;
-			runHash[x, Action.DashBackward.GetHashCode(), 0] = pictures[x*11+10].image;
+			runHash[x, Action.DashForward.GetHashCode(), 0] = pictures[x*11+6].image;
+			runHash[x, Action.DashBackward.GetHashCode(), 0] = pictures[x*11+7].image;
 		}
 
     }
     Animator anim;
 
 	private bool isMoving = false;
-	private bool isDashing = false;
-	private bool isAttacking = false;
-	private bool isSwitching = false;
-	private int tempStance;
+	// private bool isDashing = false;
+	// private bool isAttacking = false;
+	// private bool isSwitching = false;
+	// private int tempStance;
 
 	private float timer;
 	private float dashtimer;
@@ -154,43 +157,43 @@ public class AIController : MonoBehaviour {
 		loadHash();
 		// In Range
 		stateSpace[Distance.InRange.GetHashCode(), Action.Attack.GetHashCode()] =
-					Action.DashBackward.GetHashCode();
+					Action.DashBackward;
 		stateSpace[Distance.InRange.GetHashCode(), Action.Idle.GetHashCode()] =
-					Action.Attack.GetHashCode();
+					Action.Attack;
 		stateSpace[Distance.InRange.GetHashCode(), Action.DashForward.GetHashCode()] =
-					Action.DashBackward.GetHashCode();
+					Action.DashBackward;
 		stateSpace[Distance.InRange.GetHashCode(), Action.DashBackward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.InRange.GetHashCode(), Action.RunForward.GetHashCode()] =
-					Action.Attack.GetHashCode();
+					Action.Attack;
 		stateSpace[Distance.InRange.GetHashCode(), Action.RunBackward.GetHashCode()] =
-					Action.RunForward.GetHashCode();
+					Action.RunForward;
 		// Out of Range
 		stateSpace[Distance.OutOfRange.GetHashCode(), Action.Attack.GetHashCode()] =
-					Action.Idle.GetHashCode();
+					Action.Idle;
 		stateSpace[Distance.OutOfRange.GetHashCode(), Action.Idle.GetHashCode()] =
-					Action.RunForward.GetHashCode();
+					Action.RunForward;
 		stateSpace[Distance.OutOfRange.GetHashCode(), Action.DashForward.GetHashCode()] =
-					Action.Idle.GetHashCode();
+					Action.Idle;
 		stateSpace[Distance.OutOfRange.GetHashCode(), Action.DashBackward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.OutOfRange.GetHashCode(), Action.RunForward.GetHashCode()] =
-					Action.Idle.GetHashCode();
+					Action.Idle;
 		stateSpace[Distance.OutOfRange.GetHashCode(), Action.RunBackward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		// Coward
 		stateSpace[Distance.Coward.GetHashCode(), Action.Attack.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.Coward.GetHashCode(), Action.Idle.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.Coward.GetHashCode(), Action.DashForward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.Coward.GetHashCode(), Action.DashBackward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.Coward.GetHashCode(), Action.RunForward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 		stateSpace[Distance.Coward.GetHashCode(), Action.RunBackward.GetHashCode()] =
-					Action.DashForward.GetHashCode();
+					Action.DashForward;
 	}
 
     // Update is called once per frame
@@ -202,47 +205,65 @@ public class AIController : MonoBehaviour {
 			timer = 0;
 
 			// Judge Range
-			enemyRange = JudgeRange();
+			var tempRange = JudgeRange();
 			
 			// get enemy state
-			enemyStance = enemy.stance;
-			enemyActionState = GetEnemyActionState();
+			var tempEnemyStance = enemy.stance;
+			var tempActionState = GetEnemyActionState();
 			
-			// get next state (w/ noise)
-			int nextAction = stateSpace[enemyRange, enemyActionState];
-			// Noise???
+			if(tempRange == enemyRange && tempEnemyStance == enemyStance && tempActionState == enemyActionState) {
+				return;
+			}
+			else {
+				enemyRange = tempRange;
+				enemyStance = tempEnemyStance;
+				enemyActionState = tempActionState;
+			}
 
-			Debug.Log(enemyRange);
-			Debug.Log(enemyActionState);
-			Debug.Log(nextAction);
+			// get next state (w/ noise)
+			nextAction = stateSpace[enemyRange, enemyActionState];
+			// Noise???
+			if(state != nextAction){
+				animState = AnimState.End;
+			}
 
 			// set movement vars
-			if(nextAction == Action.Attack.GetHashCode())
-				isAttacking = true;
-			if(nextAction == Action.DashBackward.GetHashCode()){
-				direction = Direction.Backward.GetHashCode();
-				isMoving = true;
-				isDashing = true;
-			}
-			if(nextAction == Action.DashForward.GetHashCode()){
-				direction = Direction.Forward.GetHashCode();
-				isMoving = true;
-				isDashing = true;
-			}
-			if(nextAction == Action.Idle.GetHashCode()){
-				isMoving = false;
-				isDashing = false;
-			}
-			if(nextAction == Action.RunBackward.GetHashCode()){
-				direction = Direction.Backward.GetHashCode();
-				isMoving = true;
-				isDashing = false;
-			}
-			if(nextAction == Action.RunForward.GetHashCode()){
-				direction = Direction.Forward.GetHashCode();
-				isMoving = true;
-				isDashing = false;
-			}
+			// if(nextAction == Action.Attack.GetHashCode())
+			// 	isAttacking = true;
+			// 	isMoving = false;
+			// 	isDashing = false;
+			// if(nextAction == Action.DashBackward.GetHashCode()){
+			// 	direction = Direction.Backward.GetHashCode();
+			// 	isMoving = true;
+			// 	isDashing = true;
+			// }
+			// if(nextAction == Action.DashForward.GetHashCode()){
+			// 	direction = Direction.Forward.GetHashCode();
+			// 	isMoving = true;
+			// 	isDashing = true;
+			// }
+			// if(nextAction == Action.Idle.GetHashCode()){
+			// 	isMoving = false;
+			// 	isDashing = false;
+			// }
+			// if(nextAction == Action.RunBackward.GetHashCode()){
+			// 	direction = Direction.Backward.GetHashCode();
+			// 	isMoving = true;
+			// 	isDashing = false;
+			// }
+			// if(nextAction == Action.RunForward.GetHashCode()){
+			// 	direction = Direction.Forward.GetHashCode();
+			// 	isMoving = true;
+			// 	isDashing = false;
+			// }
+
+			Debug.Log("Range: " + enemyRange);
+			Debug.Log("EnemyActionState: " + enemyActionState);
+			Debug.Log("Next Action: " + nextAction);
+			Debug.Log("Direction: " + direction);
+			Debug.Log("Moving?: " + isMoving);
+			// Debug.Log("Dashing?: " + isDashing);
+			// Debug.Log("Attacking?: " + isAttacking);
 
 			// change stance with a random chance (if no change in action??)
 		}
@@ -251,67 +272,226 @@ public class AIController : MonoBehaviour {
 	//runs at a fixed rate.
 	void FixedUpdate()
 	{
-		if (isSwitching) {
-			stanceTimer += Time.deltaTime;
-			if (stanceTimer >= stanceSwitchDelay) {
-				stanceTimer = 0;
-				isSwitching = false;
-			}
-		}
-		else if (stance != tempStance) {
-			stance = tempStance;
-		}
-		else if (attacktimer > 0) {
-			attacktimer += Time.deltaTime;
-			if (attacktimer >= attackCooldown) {
+		// if (isSwitching) {
+		// 	stanceTimer += Time.deltaTime;
+		// 	if (stanceTimer >= stanceSwitchDelay) {
+		// 		stanceTimer = 0;
+		// 		isSwitching = false;
+		// 	}
+		// }
+		// else if (stance != tempStance) {
+		// 	stance = tempStance;
+		// }
+		// else if (attacktimer > 0) { // cooldown
+		// 	attacktimer += Time.deltaTime;
+		// 	if (attacktimer >= attackCooldown) {
+		// 		attacktimer = 0;
+		// 	}
+		// }
+		// else if (isAttacking && attacktimer == 0 && stance == tempStance) { // attack
+		// 	spriteR.sprite = runHash[stance, Action.Attack.GetHashCode(), attackC/5];
+		// 	attackC++;
+		// 	if (attackC == 15) {
+		// 		attackC = 0;
+		// 		isAttacking = false;
+		// 		attacktimer = 0.001f;
+		// 		speed = baseSpeed;
+		// 	}
+		// }
+		// if (isMoving) {
+		// 	if (isDashing) {
+		// 		dashtimer += Time.deltaTime;
+
+		// 		if (dashtimer <= dashLength) { 	//while within the threshold, animation will run.
+		// 			spriteR.sprite = runHash[stance, Action.DashForward.GetHashCode(), 0];
+		// 			transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed * 5f, 0, 0);
+		// 		} else if (dashtimer >= dashLength + dashCooldown2) {
+		// 			Running ();
+		// 			transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
+		// 			//SetAnims ("isMovingRight", true);
+		// 		} else {
+		// 			spriteR.sprite = runHash[stance, Action.DashForward.GetHashCode(), 0];
+		// 			transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
+		// 		}
+		// 		if (dashtimer >= dashLength + dashCooldown) {
+		// 			isDashing = false;
+		// 			dashtimer = 0;
+		// 		}
+		// 	} else {
+		// 		Running ();
+		// 		transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
+		// 		//SetAnims ("isMovingRight", true);
+		// 	}
+		// } else {
+		// 	//SetAnims ("isMovingRight", false);
+		// 	if(dashtimer > 0) {
+		// 		dashtimer += Time.deltaTime;
+		// 		if (dashtimer >= dashLength + dashCooldown) {
+		// 			dashtimer = 0;
+		// 		}
+		// 	}
+		// 	Idle();
+		// }
+
+
+		if(state == Action.Attack) {
+			if(animState == AnimState.Start) {
+				// enable attackbox
+				animState = AnimState.Playing;
 				attacktimer = 0;
-			}
-		}
-		else if (isAttacking && attacktimer == 0 && stance == tempStance) {
-			spriteR.sprite = runHash[stance, Action.Attack.GetHashCode(), attackC/5];
-			attackC++;
-			if (attackC == 15) {
 				attackC = 0;
-				isAttacking = false;
-				attacktimer = 0.001f;
-				speed = baseSpeed;
+				spriteR.sprite = runHash[stance, Action.Attack.GetHashCode(), 0];
+			}
+			if(animState == AnimState.Playing) {
+				if (attacktimer > 0) { // cooldown
+					attacktimer += Time.deltaTime;
+					if (attacktimer >= attackCooldown) {
+						attacktimer = 0;
+					}
+				}
+				else if (attacktimer == 0) { // attack
+					spriteR.sprite = runHash[stance, Action.Attack.GetHashCode(), attackC/5];
+					attackC++;
+					if (attackC == 15) {
+						attackC = 0;
+						attacktimer = 0.001f;
+					}
+				}
+			}
+			if(animState == AnimState.End) {
+				// disable attackbox
+				state = nextAction;
+				animState = AnimState.Start;
 			}
 		}
-		if (isMoving) {
-			if (isDashing) {
+		if(state == Action.Idle) {
+			if(animState == AnimState.Start) {
+				animState = AnimState.Playing;
+				timer = 0;
+			}
+			if(animState == AnimState.Playing) {
+				spriteR.sprite = runHash[stance, Action.Idle.GetHashCode(), (int)timer/5];
+				timer += 1;
+				timer %= 15;
+			}
+			if(animState == AnimState.End) {
+				state = nextAction;
+				animState = AnimState.Start;
+			}
+		}
+		if(state == Action.DashForward) {
+			if(animState == AnimState.Start) {
+				animState = AnimState.Playing;
+				dashtimer = 0;
+			}
+			if(animState == AnimState.Playing) {
 				dashtimer += Time.deltaTime;
 
 				if (dashtimer <= dashLength) { 	//while within the threshold, animation will run.
 					spriteR.sprite = runHash[stance, Action.DashForward.GetHashCode(), 0];
-					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed * 5f, 0, 0);
+					transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed * 5f, 0, 0);
 				} else if (dashtimer >= dashLength + dashCooldown2) {
-					Running ();
-					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
-					//SetAnims ("isMovingRight", true);
+					// Running ();
+					spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)timer/5];
+					transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed, 0, 0);
+					timer += 1;
+					timer %= 15;
 				} else {
 					spriteR.sprite = runHash[stance, Action.DashForward.GetHashCode(), 0];
+					transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed, 0, 0);
+				}
+				if (dashtimer >= dashLength + dashCooldown) {
+					dashtimer = 0;
+				}
+			}
+			if(animState == AnimState.End) {
+				state = nextAction;
+				animState = AnimState.Start;
+			}
+		}
+		if(state == Action.DashBackward) {
+			if(animState == AnimState.Start) {
+				animState = AnimState.Playing;
+				dashtimer = 0;
+			}
+			if(animState == AnimState.Playing) {
+				dashtimer += Time.deltaTime;
+
+				if (dashtimer <= dashLength) { 	//while within the threshold, animation will run.
+					spriteR.sprite = runHash[stance, Action.DashBackward.GetHashCode(), 0];
+					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed * 5f, 0, 0);
+				} else if (dashtimer >= dashLength + dashCooldown2) {
+					// Running ();
+					spriteR.sprite = runHash[stance, Action.RunBackward.GetHashCode(), (int)timer/5];
+					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
+					timer += 1;
+					timer %= 15;
+				} else {
+					spriteR.sprite = runHash[stance, Action.DashBackward.GetHashCode(), 0];
 					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
 				}
 				if (dashtimer >= dashLength + dashCooldown) {
-					isDashing = false;
-					dashtimer = 0;
-				}
-			} else {
-				Running ();
-				transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
-				//SetAnims ("isMovingRight", true);
-			}
-		} else {
-			//SetAnims ("isMovingRight", false);
-			if(dashtimer > 0) {
-				dashtimer += Time.deltaTime;
-				if (dashtimer >= dashLength + dashCooldown) {
 					dashtimer = 0;
 				}
 			}
-			Idle();
+			if(animState == AnimState.End) {
+				state = nextAction;
+				animState = AnimState.Start;
+			}
 		}
+		if(state == Action.RunForward) {
+			if(animState == AnimState.Start) {
+				animState = AnimState.Playing;
+				timer = 0;
+			}
+			if(animState == AnimState.Playing) {
+				spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)timer/5];
+				transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed, 0, 0);
+				timer += 1;
+				timer %= 15;
+			}
+			if(animState == AnimState.End) {
+				state = nextAction;
+				animState = AnimState.Start;
+			}
+		}
+		if(state == Action.RunBackward) {
+			if(animState == AnimState.Start) {
+				animState = AnimState.Playing;
+				timer = 0;
+			}
+			if(animState == AnimState.Playing) {
+				spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)timer/5];
+				transform.Translate ((direction * (- 2) + 1) * Time.deltaTime * speed, 0, 0);
+				timer += 1;
+				timer %= 15;
+			}
+			if(animState == AnimState.End) {
+				state = nextAction;
+				animState = AnimState.Start;
+			}
+		}
+
 	}
+
+	// back = 0
+	// forward = 1
+	// stances: left, up, right, down
+	//          0,    1,  2,     3
+	// if backward:
+	// 0 = 2, 2 = 0, 1 = 1, 3 = 3
+	// : stance - 2) * -1) + 4) % 4
+	// = (4 - (stance - 2)) % 4
+	// if forward:
+	// original
+	// = ?
+	// what if ignore down?
+	// if backward:
+	// stance - 2) * -1
+	// = 2 - stance
+	// if forward:
+	// original
+	// = ?
 
     private int GetEnemyActionState()
     {
@@ -338,9 +518,7 @@ public class AIController : MonoBehaviour {
 		if (running == 15) {
 			running = 0;
 		}
-		if (!isAttacking) {
-			spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), running / 5];
-		}
+		// spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), running / 5];
 		// if (direction == 1 && running % 5 == 0) {
         //     spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
 
