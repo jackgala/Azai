@@ -124,8 +124,8 @@ public class AIController : MonoBehaviour {
 			for(int y = 0; y < 3; y++) {
 				runHash[x, Action.Attack.GetHashCode(), y] = pictures[x*11+y].image;
 				runHash[x, Action.Idle.GetHashCode(), y] = pictures[x*11+y+3].image;
-				runHash[x, Action.RunForward.GetHashCode(), y%3] = pictures[x*11+y+8].image;
-				runHash[x, Action.RunBackward.GetHashCode(), y%3] = pictures[x*11+y+11].image;
+				runHash[x, Action.RunForward.GetHashCode(), y] = pictures[x*11+y+8].image;
+				runHash[x, Action.RunBackward.GetHashCode(), y] = pictures[x*11+y+11].image;
 			}
 			runHash[x, Action.DashForward.GetHashCode(), 0] = pictures[x*11+6].image;
 			runHash[x, Action.DashBackward.GetHashCode(), 0] = pictures[x*11+7].image;
@@ -140,7 +140,8 @@ public class AIController : MonoBehaviour {
 	// private bool isSwitching = false;
 	// private int tempStance;
 
-	private float timer;
+	public float timer;
+    public int grandmaTimer;
 	private float dashtimer;
 	private float attacktimer;
 	private float stanceTimer;
@@ -394,8 +395,8 @@ public class AIController : MonoBehaviour {
 					// Running ();
 					spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)timer/5];
 					transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed, 0, 0);
-					timer += 1;
-					timer %= 15;
+					grandmaTimer += 1;
+					grandmaTimer %= 15;
 				} else {
 					spriteR.sprite = runHash[stance, Action.DashForward.GetHashCode(), 0];
 					transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed, 0, 0);
@@ -405,8 +406,16 @@ public class AIController : MonoBehaviour {
 				}
 			}
 			if(animState == AnimState.End) {
-				state = nextAction;
-				animState = AnimState.Start;
+                if (dashtimer <= dashLength)
+                {
+                    spriteR.sprite = runHash[stance, Action.DashForward.GetHashCode(), 0];
+                    transform.Translate((direction * (2) - 1) * Time.deltaTime * speed * 5f, 0, 0);
+                    dashtimer += Time.deltaTime;
+                }
+                else {
+                    state = nextAction;
+                    animState = AnimState.Start;
+                }
 			}
 		}
 		if(state == Action.DashBackward) {
@@ -442,32 +451,32 @@ public class AIController : MonoBehaviour {
 		if(state == Action.RunForward) {
 			if(animState == AnimState.Start) {
 				animState = AnimState.Playing;
-				timer = 0;
+                grandmaTimer = 0;
 			}
 			if(animState == AnimState.Playing) {
-				spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)timer/5];
+				spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)grandmaTimer/ 5];
 				transform.Translate ((direction * (2) - 1) * Time.deltaTime * speed, 0, 0);
-				timer += 1;
-				timer %= 15;
+                grandmaTimer += 1;
+                grandmaTimer %= 15;
 			}
 			if(animState == AnimState.End) {
-				state = nextAction;
-				animState = AnimState.Start;
+                    state = nextAction;
+                    animState = AnimState.Start;
 			}
 		}
 		if(state == Action.RunBackward) {
 			if(animState == AnimState.Start) {
 				animState = AnimState.Playing;
-				timer = 0;
+                grandmaTimer = 0;
 			}
 			if(animState == AnimState.Playing) {
-				spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)timer/5];
+				spriteR.sprite = runHash[stance, Action.RunForward.GetHashCode(), (int)grandmaTimer/ 5];
 				transform.Translate ((direction * (- 2) + 1) * Time.deltaTime * speed, 0, 0);
-				timer += 1;
-				timer %= 15;
+                grandmaTimer += 1;
+                grandmaTimer %= 15;
 			}
 			if(animState == AnimState.End) {
-				state = nextAction;
+                state = nextAction;
 				animState = AnimState.Start;
 			}
 		}
