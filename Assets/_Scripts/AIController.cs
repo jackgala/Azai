@@ -48,43 +48,45 @@ public class AIController : MonoBehaviour {
 	public float noise;
 	public float refreshRate = 1f;
 
+	// enums
 	private enum Distance {InRange, OutOfRange, Coward};
 	private enum Action {Attack, Idle, DashForward, DashBackward, RunForward, RunBackward};
+	private enum Stance {Left, High, Right, Low};
 	private enum Direction {Backward, Forward};
 	private enum AnimState {Start, Playing, End}
+	// State vars
 	private AnimState animState = AnimState.Start;
 	private Action state = Action.Idle;
 	private Action nextAction;
+	private int direction;
+	private int running = 0;
+	private int stance = 0;
+	// State space
 	private Action[,] stateSpace = new Action[3,6];
+	// cooldowns
 	public float dashCooldown = 0.6f;
 	public float dashCooldown2 = 0.3f;
 	public float dashLength = 0.05f;
 	public float attackCooldown = 0.6f;
 	public float stanceSwitchDelay = 0.3f;
+	// speeds
 	public float baseSpeed = 20f;
 	public float attackSpeedModifier = 0.85f;
-	// public Sprite[] runningForwardSheet;
-	// public Sprite[] runningForwardRightStance;
-	// public Sprite[] runningForwardUpStance;
-	// public Sprite[] runningBackwardRightStance;
-	// public Sprite[] runningBackwardUpStance;
-	// public Sprite[] runningBackwardSheet;
-	//public Sprite[] idle;
-	//public Sprite[] attackF;
-	private int direction;
-	private int running = 0;
+	// components
     public Collider2D hitbox;
     public Collider2D attackbox;
 	public PlayerController enemy;
-	//private int attack = 0;
+	// counters
 	private int idleC = 0;
 	private int attackC = 0;
-	private int stance = 0;
+	// enemy tracker
 	private int enemyStance;
 	private int enemyActionState;
 	private int enemyRange;
+	// speeds
 	private float attackMoveSpeed;
 	private float speed;
+	// Sprites
 	private SpriteRenderer spriteR;
     [Serializable]
     public struct NamedImage
@@ -93,8 +95,9 @@ public class AIController : MonoBehaviour {
         public Sprite image;
     }
     public NamedImage[] pictures;
-	private enum Stance {Left, High, Right, Low};
     private Sprite[,,] runHash = new Sprite[4, 6, 3];
+
+	// Load from pictures in to runhash
     private void loadHash()
     {
 		/*
@@ -102,23 +105,7 @@ public class AIController : MonoBehaviour {
 				High stance, Right Stance, Left Stance
 				Run
 		 */
-		/*
-        for (int x = 0; x < 6; x++)
-        {
-            loadingStance += x;
-            runHash[] = pictures[loadingStance].image;
-        }
-        for (int x = 0; x < 6; x++)
-        {
-            loadingStance += x;
-            runHash[1].Add(pictures[loadingStance].name, pictures[loadingStance].image);
-        }
-        for (int x = 0; x < 6; x++)
-        {
-            loadingStance += x;
-            runHash[2].Add(pictures[loadingStance].name, pictures[loadingStance].image);
-        }*/
-
+		
 		for (int x = 0; x < 3; x++)
 		{
 			for(int y = 0; y < 3; y++) {
@@ -211,10 +198,22 @@ public class AIController : MonoBehaviour {
 			// get enemy state
 			var tempEnemyStance = enemy.stance;
 			var tempActionState = GetEnemyActionState();
+
+			// get direction
+			if(enemy.gameObject.transform.position.x - transform.position.x < 0) {
+				direction = 0;
+				spriteR.flipX = true;
+			}
+			else {
+				direction = 1;
+				spriteR.flipX = false;
+			}
 			
+			// If nothing changed
 			if(tempRange == enemyRange && tempEnemyStance == enemyStance && tempActionState == enemyActionState) {
 				return;
 			}
+			// else change
 			else {
 				enemyRange = tempRange;
 				enemyStance = tempEnemyStance;
@@ -224,47 +223,15 @@ public class AIController : MonoBehaviour {
 			// get next state (w/ noise)
 			nextAction = stateSpace[enemyRange, enemyActionState];
 			// Noise???
+			// Signal for current animation to end
 			if(state != nextAction){
 				animState = AnimState.End;
 			}
-
-			// set movement vars
-			// if(nextAction == Action.Attack.GetHashCode())
-			// 	isAttacking = true;
-			// 	isMoving = false;
-			// 	isDashing = false;
-			// if(nextAction == Action.DashBackward.GetHashCode()){
-			// 	direction = Direction.Backward.GetHashCode();
-			// 	isMoving = true;
-			// 	isDashing = true;
-			// }
-			// if(nextAction == Action.DashForward.GetHashCode()){
-			// 	direction = Direction.Forward.GetHashCode();
-			// 	isMoving = true;
-			// 	isDashing = true;
-			// }
-			// if(nextAction == Action.Idle.GetHashCode()){
-			// 	isMoving = false;
-			// 	isDashing = false;
-			// }
-			// if(nextAction == Action.RunBackward.GetHashCode()){
-			// 	direction = Direction.Backward.GetHashCode();
-			// 	isMoving = true;
-			// 	isDashing = false;
-			// }
-			// if(nextAction == Action.RunForward.GetHashCode()){
-			// 	direction = Direction.Forward.GetHashCode();
-			// 	isMoving = true;
-			// 	isDashing = false;
-			// }
 
 			Debug.Log("Range: " + enemyRange);
 			Debug.Log("EnemyActionState: " + enemyActionState);
 			Debug.Log("Next Action: " + nextAction);
 			Debug.Log("Direction: " + direction);
-			Debug.Log("Moving?: " + isMoving);
-			// Debug.Log("Dashing?: " + isDashing);
-			// Debug.Log("Attacking?: " + isAttacking);
 
 			// change stance with a random chance (if no change in action??)
 		}
@@ -334,16 +301,15 @@ public class AIController : MonoBehaviour {
 		// 	Idle();
 		// }
 
-
-		if(state == Action.Attack) {
-			if(animState == AnimState.Start) {
+		if(state == Action.Attack) { // Attack
+			if(animState == AnimState.Start) { // Start Anim
 				// enable attackbox
 				animState = AnimState.Playing;
 				attacktimer = 0;
 				attackC = 0;
 				spriteR.sprite = runHash[stance, Action.Attack.GetHashCode(), 0];
 			}
-			if(animState == AnimState.Playing) {
+			if(animState == AnimState.Playing) { // Anim playing
 				if (attacktimer > 0) { // cooldown
 					attacktimer += Time.deltaTime;
 					if (attacktimer >= attackCooldown) {
@@ -359,7 +325,7 @@ public class AIController : MonoBehaviour {
 					}
 				}
 			}
-			if(animState == AnimState.End) {
+			if(animState == AnimState.End) { // Anim ending
 				// disable attackbox
 				state = nextAction;
 				animState = AnimState.Start;
@@ -548,7 +514,6 @@ public class AIController : MonoBehaviour {
 			idleC = 0;
 		}
 		if (idleC % 9 == 0) {
-			//runningForwardSheet [counter];
 			spriteR.sprite = runHash [stance, Action.Idle.GetHashCode(), idleC / 9];
 		} 
 		idleC++;
