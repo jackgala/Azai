@@ -115,11 +115,19 @@ public class PlayerController : MonoBehaviour {
 		// check facing direction
 		if(enemy.gameObject.transform.position.x - transform.position.x < 0) {
 			spriteR.flipX = true;
-			facing = 1;
+			if(facing != 1) {
+				stance = (stance % 2 == 0)? 2 - stance : stance;
+				tempStance = stance;
+				facing = 1;
+			}
 		}
 		else {
 			spriteR.flipX = false;
-			facing = 0;
+			if(facing != 0) {
+				stance = (stance % 2 == 0)? 2 - stance : stance;
+				tempStance = stance;
+				facing = 0;
+			}
 		}
 		// Dash
 		if (Input.GetKey(KeyCode.Semicolon)) {
@@ -131,7 +139,7 @@ public class PlayerController : MonoBehaviour {
 				isAttacking = true;
 				speed = attackMoveSpeed;
 			}
-			if (stance != Stance.Left.GetHashCode()){ // Stance switch
+			if (stance != Stance.Left.GetHashCode() + facing * 2){ // Stance switch
 				isSwitching = true;
 				tempStance = Stance.Left.GetHashCode() + facing * 2;
 			}
@@ -154,7 +162,7 @@ public class PlayerController : MonoBehaviour {
 				isAttacking = true;
 				speed = attackMoveSpeed;
 			}
-			if (stance != Stance.Right.GetHashCode()){ // Stance switch
+			if (stance != Stance.Right.GetHashCode() - facing * 2){ // Stance switch
 				isSwitching = true;
 				tempStance = Stance.Right.GetHashCode() - facing * 2;
 			}
