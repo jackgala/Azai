@@ -79,6 +79,11 @@ public class AIController : MonoBehaviour {
 	// counters
 	private int idleC = 0;
 	private int attackC = 0;
+	public float timer;
+    public int grandmaTimer;
+	private float dashtimer;
+	private float attacktimer;
+	private float stanceTimer;
 	// enemy tracker
 	private int enemyStance;
 	private int enemyActionState;
@@ -119,23 +124,9 @@ public class AIController : MonoBehaviour {
 		}
 
     }
-    Animator anim;
 
-	private bool isMoving = false;
-	// private bool isDashing = false;
-	// private bool isAttacking = false;
-	// private bool isSwitching = false;
-	// private int tempStance;
-
-	public float timer;
-    public int grandmaTimer;
-	private float dashtimer;
-	private float attacktimer;
-	private float stanceTimer;
     // Use this for initialization
     void Start () {
-		anim = GetComponent<Animator> ();
-		isMoving = false;
 		spriteR = gameObject.GetComponent<SpriteRenderer>();
 		enemyStance = enemy.stance;
 		enemyActionState = GetEnemyActionState();

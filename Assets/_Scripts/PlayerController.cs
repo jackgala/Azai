@@ -30,6 +30,7 @@ public class PlayerController : MonoBehaviour {
 	public float attackSpeedModifier = 0.85f;
 	// state vars
 	public int direction;
+	private int facing = 0;
 	private int running = 0;
 	public int stance = 0;
 	private int tempStance;
@@ -65,6 +66,8 @@ public class PlayerController : MonoBehaviour {
 	private enum Action {Idle, Run, Attack, Dash};
 	// Sprite hash map: Direction, Stance, Action, Frame Index
     private Sprite[,,,] runHash = new Sprite[2, 4, 4, 3];
+	// Enemy
+	public AIController enemy;
 
 	// Loads the sprites from pictures into runHash
     private void loadHash()
@@ -109,6 +112,15 @@ public class PlayerController : MonoBehaviour {
 	// Controller
 	// Where the magic starts
 	void Update () {
+		// check facing direction
+		if(enemy.gameObject.transform.position.x - transform.position.x < 0) {
+			spriteR.flipX = true;
+			facing = 1;
+		}
+		else {
+			spriteR.flipX = false;
+			facing = 0;
+		}
 		// Dash
 		if (Input.GetKey(KeyCode.Semicolon)) {
 			isDashing = true;
@@ -121,7 +133,7 @@ public class PlayerController : MonoBehaviour {
 			}
 			if (stance != Stance.Left.GetHashCode()){ // Stance switch
 				isSwitching = true;
-				tempStance = Stance.Left.GetHashCode();
+				tempStance = Stance.Left.GetHashCode() + facing * 2;
 			}
 		}
 		/*  if (Input.GetKey(KeyCode.K)) {
@@ -144,7 +156,7 @@ public class PlayerController : MonoBehaviour {
 			}
 			if (stance != Stance.Right.GetHashCode()){ // Stance switch
 				isSwitching = true;
-				tempStance = Stance.Right.GetHashCode();
+				tempStance = Stance.Right.GetHashCode() - facing * 2;
 			}
 		}
 		// Movement
@@ -183,7 +195,7 @@ public class PlayerController : MonoBehaviour {
 		}
 		//	 If  Attacking,     can attack, and     not currently switching stance
 		else if (isAttacking && attacktimer == 0 && stance == tempStance) {
-			spriteR.sprite = runHash[direction, stance, Action.Attack.GetHashCode(), attackC/5];
+			spriteR.sprite = runHash[direction ^ facing, stance, Action.Attack.GetHashCode(), attackC/5];
 			attackC++;
 			if (attackC == 15) {
 				attackC = 0;
@@ -199,7 +211,7 @@ public class PlayerController : MonoBehaviour {
 				// If within dash time threshold
 				if (dashtimer <= dashLength) { 
 					// dash
-					spriteR.sprite = runHash[direction, stance, Action.Dash.GetHashCode(), 0];
+					spriteR.sprite = runHash[direction ^ facing, stance, Action.Dash.GetHashCode(), 0];
 					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed * 5f, 0, 0);
 				// Dash cooldown
 				} else if (dashtimer >= dashLength + dashCooldown2) {
@@ -209,7 +221,7 @@ public class PlayerController : MonoBehaviour {
 				// dashLength < now < dashCooldown2
 				// Inital burst done, momentary freeze frame
 				} else {
-					spriteR.sprite = runHash[direction, stance, Action.Dash.GetHashCode(), 0];
+					spriteR.sprite = runHash[direction ^ facing, stance, Action.Dash.GetHashCode(), 0];
 					transform.Translate ((direction * (-2) + 1) * Time.deltaTime * speed, 0, 0);
 				}
 				// Dash cooldown done
@@ -241,7 +253,7 @@ public class PlayerController : MonoBehaviour {
 			running = 0;
 		}
 		if (!isAttacking) {
-			spriteR.sprite = runHash[direction, stance, Action.Run.GetHashCode(), running / 5];
+			spriteR.sprite = runHash[direction ^ facing, stance, Action.Run.GetHashCode(), running / 5];
 		}
 		// if (direction == 1 && running % 5 == 0) {
         //     spriteR.sprite = (Sprite)runHash[stance]["Forwards"];
@@ -263,7 +275,7 @@ public class PlayerController : MonoBehaviour {
 			idleC = 0;
 		}
 		if (idleC % 9 == 0) {
-			spriteR.sprite = runHash[direction, stance, Action.Idle.GetHashCode(), idleC / 9];
+			spriteR.sprite = runHash[direction ^ facing, stance, Action.Idle.GetHashCode(), idleC / 9];
 		} 
 		idleC++;
 	}
